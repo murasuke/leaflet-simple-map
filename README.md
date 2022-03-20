@@ -1,46 +1,119 @@
-# Getting Started with Create React App
+# React-leafletで国土地理院の地図を表示するサンプル
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## はじめに
 
-## Available Scripts
+地図データは国土地理院のデータを利用しています。出展の明示のみで利用可能です。
 
-In the project directory, you can run:
+[地図の利用手続パンフレット](https://www.gsi.go.jp/common/000223838.pdf)より抜粋
+```
+●国土地理院サーバー上の地理院タイルをリアルタイムで読み込み表示するウェブサイト等を作成する場合、
+申請は必要ですか？
+➡ リアルタイムでの読込みは、出典の明示のみで申請不要です。出典は、「国土地理院」、「地理院タイル」等と記載してい
+ただき、地理院タイル一覧ページ（https://maps.gsi.go.jp/development/ichiran.html）へのリンクを付けてください。
+```
 
-### `npm start`
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+## 前提
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+* Reactの基本的な機能を理解していること
 
-### `npm test`
+## React-Leaflet のインストール
+```
+$ npx create-react-app leaflet-sample-map --template typescript --use-npm
+$ cd leaflet-sample-map
+$ npm i leaflet react-leaflet
+$ npm i -D @types/leaflet
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## ①最小限の地図サンプル
 
-### `npm run build`
+* 地図とマーカーを表示します
+* ドラッグ＆ドロップによる移動や、マウスホイールによる拡大縮小もできます
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+![img10](./img/img10.png)
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### ①-1位置を表すアイコン(Marker)の読み込み
 
-### `npm run eject`
+React-leafletの不具合？でアイコンが読み込まれないため、最初にアイコンを読み込む処理を作ります。
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+src/utils/initLeaflet.ts
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```tsx
+import Leaflet from 'leaflet';
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+// marker setting
+let DefaultIcon = Leaflet.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconAnchor: [12, 41], // アイコンのとがった位置をクリックした場所に合わせるためのオフセット
+});
+Leaflet.Marker.prototype.options.icon = DefaultIcon;
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+```
 
-## Learn More
+### ①-2マップ表示機能ソース
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+* [react-leaflet](https://react-leaflet.js.org/)で地図を表示します
+* `leaflet/dist/leaflet.css`を読み込みます(忘れると表示が崩れます)
+* `①-1`で作成したソースを読み込み、位置表示アイコンをロードします
+* 国土地理院の地図タイルを`<TileLayer>`で読み込みます
+* 位置表示アイコンを`<Marker>`で表示します
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+
+App.tsx
+
+```tsx
+import React, { VFC } from 'react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { LatLng } from 'leaflet';
+import 'utils/initLeaflet';
+import 'leaflet/dist/leaflet.css';
+import './App.css';
+
+const App: VFC = () => {
+  const position = new LatLng(35.3607411, 138.727262);  // 富士山頂
+
+  return (
+    <div className="App">
+      <MapContainer center={position} zoom={13}>
+        <TileLayer
+          attribution='&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html">国土地理院</a>'
+          url="https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png"
+        />
+        <Marker position={position}>
+          <Popup>
+            A pretty CSS3 popup. <br /> Easily customizable.
+          </Popup>
+        </Marker>
+      </MapContainer>
+    </div>
+  );
+};
+
+export default App;
+```
+
+### ①-3マップを全画面表示するためにCSSを変更
+
+App.css
+
+```css
+/* 地図を画面全体に表示 */
+.leaflet-container {
+  width: 100vw;
+  height: 100vh;
+}
+
+/* カーソルを標準に戻す(標準の手アイコンは位置を正確に選択しづらい) */
+.leaflet-grab {cursor: auto;}
+```
+
+### ①-4ブラウザで表示して動作を確認
+
+```bash
+npm run start
+```
+---
