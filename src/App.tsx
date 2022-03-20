@@ -1,26 +1,28 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { VFC } from "react";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { LatLng } from "leaflet";
+import "./utils/initLeaflet";
+import "leaflet/dist/leaflet.css";
+import "./App.css";
 
-function App() {
+const App: VFC = () => {
+  const position = new LatLng(35.3607411, 138.727262); // 富士山頂
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <MapContainer center={position} zoom={13}>
+        <TileLayer
+          attribution='&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html">国土地理院</a>'
+          url="https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png"
+        />
+        <Marker position={position}>
+          <Popup>
+            A pretty CSS3 popup. <br /> Easily customizable.
+          </Popup>
+        </Marker>
+      </MapContainer>
     </div>
   );
-}
+};
 
 export default App;
